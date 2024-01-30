@@ -3,19 +3,15 @@ const db = require("./db");
 const app = express();
 const port = 3000;
 
+app.use(express.json());
+
+const routesCategories = require("./routes/categories");
+
 app.get("/", (req, res) => {
   res.send("Olá, essa é a aplicação Wallet App");
 });
 
-app.get("/categories", (req, res) => {
-  db.query("SELECT * FROM categories", (error, response) => {
-    if (error) {
-      return res.status(500).json(console.log(error));
-    }
-
-    return res.status(200).json(response.rows);
-  });
-});
+app.use("/categories", routesCategories);
 
 app.listen(port, () => {
   db.connect()
