@@ -12,13 +12,16 @@ const findOne = (id) => {
 
 router.get("/", (req, res) => {
   try {
-    db.query("SELECT * FROM categories", (error, response) => {
-      if (error) {
-        return res.status(500).json(console.log(error));
-      }
+    db.query(
+      "SELECT * FROM categories ORDER BY name ASC",
+      (error, response) => {
+        if (error) {
+          return res.status(500).json(console.log(error));
+        }
 
-      return res.status(200).json(response.rows);
-    });
+        return res.status(200).json(response.rows);
+      }
+    );
   } catch (error) {
     return res.status(500).json(error);
   }
@@ -73,7 +76,44 @@ router.delete("/:id", async (req, res) => {
       return res.status(400).json({ error: "Category not deleted." });
     }
 
-    return res.status(200).json(deleteResponse.rows);
+    return res.status(200).json(deleteResponse.rows[0]);
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+});
+
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: "Param id is mandatory." });
+    }
+
+    if (name.length < 3) {
+      return res
+        .status(400)
+        .json({ error: "Name should have more than 3 characters" });
+    }
+
+    const query = findOne(id);
+    const category = await db.query(query);
+
+    if (!category.rows[0]) {
+      return res.status(404).json({ error: "Category not found." });
+    }
+
+    const text = "UPDATE categories SET name=$1 WHERE id=$2 RETURNING *";
+    const values = [name, Number(id)];
+
+    const updateResponse = await db.query(text, values);
+
+    if (!updateResponse.rows[0]) {
+      return res.status(400).json({ error: "Category not updated." });
+    }
+
+    return res.status(200).json(updateResponse.rows[0]);
   } catch (error) {
     return res.status(500).json(error);
   }
